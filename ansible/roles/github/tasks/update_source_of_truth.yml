@@ -1,0 +1,6 @@
+---
+- name: Git checkout
+  ansible.builtin.git:
+    repo: 'https://github.com/ExxonMobil/SWG-CaC.git'
+    dest: checkout
+    version: sandbox

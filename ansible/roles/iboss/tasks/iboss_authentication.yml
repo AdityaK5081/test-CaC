@@ -1,0 +1,72 @@
+---
+# Official iBoss API documentation
+# https://documenter.getpostman.com/view/26524233/2s93RUuXjk
+- name: Iboss Authentication Block
+  any_errors_fatal: true
+  block:
+    - name: Login
+      ansible.builtin.uri:
+        url: "https://accounts.{{ iboss_api_base_url }}/ibossauth/web/tokens?ignoreAuthModule=true"
+        method: GET
+        validate_certs: false
+        body_format: form-urlencoded
+        headers:
+          Authorization: "Basic {{ (iboss_api_user + ':' + iboss_api_password) | b64encode }}"
+          Connection: "keep-alive"
+          Accept: "*/*"
+        return_content: true
+      register: token
+      retries: 2
+      delay: 10
+      no_log: true
+    - name: Get Primary Account ID
+      ansible.builtin.uri:
+        url: "https://api.{{ iboss_api_base_url }}/ibcloud/web/users/mySettings"
+        method: GET
+        body_format: form-urlencoded
+        headers:
+          Authorization: "Token {{ token.json.token }}"
+          Connection: "keep-alive"
+          Accept: "*/*"
+          Accept-Encoding: "gzip, deflate, br"
+        return_content: true
+      register: users_settings
+      retries: 1
+      delay: 10
+      no_log: true
+    - name: Get API Base Domains
+      ansible.builtin.uri:
+        url: "https://api.{{ iboss_api_base_url }}/ibcloud/web/account/clusters?accountSettingsId={{ users_settings.json.0.accountSettingsId }}"
+        method: GET
+        body_format: form-urlencoded
+        headers:
+          Authorization: "Token {{ token.json.token }}"
+          XSRF-TOKEN: users_settings.cookies.XSRF-TOKEN
+          JSESSIONID: users_settings.cookies.JSESSIONID
+          Connection: "keep-alive"
+          Accept: "*/*"
+          Accept-Encoding: "gzip, deflate, br"
+        return_content: true
+      register: api_base_domains
+      retries: 1
+      delay: 10
+      no_log: true
+    - name: Set Primary Node
+      ansible.builtin.set_fact:
+        # json_query is a *much* faster alternative to looping through data
+        primary_node: "{{ api_base_domains.json | community.general.json_query(query_primary_node) }}"
+      vars:
+        # https://jmespath.org/examples.html
+        query_primary_node: "[?productFamily=='swg'].members[*].cloudNode[].adminInterfaceDns|[0]"
+    - name: Build Authentication Dictionary
+      ansible.builtin.set_fact:
+        iboss:
+          primary_node: "{{ primary_node }}"
+          token: "{{ token.json.token }}"
+          xsrf_token: "{{ api_base_domains.cookies['XSRF-TOKEN'] }}"
+          jsessionid: "{{ api_base_domains.cookies['JSESSIONID'] }}"
+      no_log: true
+  rescue:
+    - name: Print when errors
+      ansible.builtin.debug:
+        msg: 'Error authenticating to iBoss'

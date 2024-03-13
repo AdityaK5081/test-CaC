@@ -1,0 +1,5 @@
+---
+# ibosscloud.com => iboss.com for production?
+iboss_api_base_url: "{{ 'ibosscloud.com' if target_environment == 'production' else 'ibosscloud-staging.com' }}"
+iboss_api_user: "{{ lookup('env', 'USERNAME') }}"
+iboss_api_password: "{{ lookup('env', 'PASSWORD') }}"

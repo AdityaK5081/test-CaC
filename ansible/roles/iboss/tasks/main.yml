@@ -1,0 +1,6 @@
+---
+- name: Authentication
+  ansible.builtin.include_tasks: iboss_authentication.yml
+- name: Enforce Compliance
+  ansible.builtin.include_tasks: enforce_compliance.yml
+  when: iboss.token is defined

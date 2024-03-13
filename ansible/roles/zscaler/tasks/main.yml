@@ -1,0 +1,5 @@
+---
+- name: Authentication
+  ansible.builtin.include_tasks: zscaler_authentication.yml
+- name: Enforce Compliance
+  ansible.builtin.include_tasks: enforce_compliance.yml

@@ -1,0 +1,21 @@
+---
+- name: Master Playbook
+  hosts: localhost  # We run our jobs from the Ansible nodes directly
+  connection: local  # And we don't SSH to the local node because that makes no sense
+  gather_facts: false
+  tasks:
+    - name: What environment are we in?
+      ansible.builtin.debug:
+        msg: "target_environment: {{ target_environment }} | target: {{ target }}"
+    - name: IBoss
+      ansible.builtin.include_role:
+        name: iboss
+      when: target == 'iboss'
+    - name: Zscaler
+      ansible.builtin.include_role:
+        name: zscaler
+      when: target == 'zscaler'
+    - name: GitHub
+      ansible.builtin.include_role:
+        name: github
+      when: target == 'github'

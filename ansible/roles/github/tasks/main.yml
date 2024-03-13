@@ -1,0 +1,5 @@
+---
+- name: Authentication
+  ansible.builtin.include_tasks: github_authentication.yml
+- name: Update Source of Truth
+  ansible.builtin.include_tasks: update_source_of_truth.yml

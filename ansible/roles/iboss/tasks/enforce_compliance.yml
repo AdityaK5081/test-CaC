@@ -1,0 +1,53 @@
+---
+- name: Store desired state from the repo in a variable
+  ansible.builtin.include_vars:
+    file: ../truth/desired_state.yml
+    name: desired_state
+- name: Get All Policy Layers
+  ansible.builtin.uri:
+    url: "https://{{ iboss.primary_node }}/json/controls/policyLayers/all"
+    method: GET
+    body_format: form-urlencoded
+    headers:
+      Cookie: XSRF-TOKEN={{ iboss.xsrf_token }};JSESSIONID={{ iboss.jsessionid }}
+      Authorization: "Token {{ iboss.token }}"
+      X-XSRF-TOKEN: "{{ iboss.xsrf_token }}"
+      Connection: "keep-alive"
+      Accept: "*/*"
+      Accept-Encoding: "gzip, deflate, br"
+    return_content: true
+  register: all_policy_layers
+  no_log: true
+- name: Select Type 1 (allow list) Category Layers
+  ansible.builtin.set_fact:
+    type_1_policy_layers: "{{ all_policy_layers.json | community.general.json_query(query) }}"
+  vars:
+    query: "entries[?categoryType==`1`]"
+- name: Select Policy Layer Names
+  ansible.builtin.set_fact:
+    type_1_policy_layer_names: "{{ type_1_policy_layers | community.general.json_query(query) }}"
+  vars:
+    query: "[].customCategoryName"
+- name: Create Missing Policy Layer
+  ansible.builtin.uri:
+    url: "https://{{ iboss.primary_node }}/json/controls/policyLayers"
+    method: PUT
+    body_format: json
+    body: "{{ lookup('template', 'create_policy_layer.json.j2') }}"
+    headers:
+      Host: "{{ iboss.primary_node }}"
+      Cookie: XSRF-TOKEN={{ iboss.xsrf_token }};JSESSIONID={{ iboss.jsessionid }}
+      Authorization: "Token {{ iboss.token }}"
+      X-XSRF-TOKEN: "{{ iboss.xsrf_token }}"
+      Connection: "keep-alive"
+      Accept: "*/*"
+      Accept-Encoding: "gzip, deflate, br"
+    return_content: true
+  register: new_policy_ids
+  when: item.name not in type_1_policy_layer_names
+  no_log: true
+  loop: "{{ desired_state.exceptions.unblock }}"
+- name: Debug
+  ansible.builtin.debug:
+    msg: "{{ item.json.customCategoryId }}"
+  loop: "{{ new_policy_ids.results }}"

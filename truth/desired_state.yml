@@ -1,0 +1,36 @@
+---
+exceptions:
+  unblock:
+    - name: "TESTING - Group"
+      expiration: 3-Mar-2024
+      owner: "daniel.p.davis@exxonmobil.com"
+      requestor: "guillermo.j.sznajderman@exxonmobil.com"
+      organization: EUC
+      group: "mspsupportforiboss.ug"
+      urls:
+        - url: "mail.example.com"
+          notes: "CaC Prototype Testing"
+    - name: "TESTING - User"
+      expiration: 3-Mar-2024
+      owner: "daniel.p.davis@exxonmobil.com"
+      requestor: "guillermo.j.sznajderman@exxonmobil.com"
+      organization: EUC
+      user: "dpdavis"
+      urls:
+        - url: "mail.example.com"
+core_settings:
+  web_categories:
+    - default:
+      - adult_content:
+        actions:
+          - block
+          - ssl_decryption
+      - art:
+        actions:
+          - block
+          - ssl_decryption
+    - red_button:
+      - adult_content:
+        actions:
+          - block
+          - ssl_decryption
